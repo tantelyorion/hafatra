@@ -1,0 +1,84 @@
+# ============================================================
+# HAFATRA - .htaccess
+# Placez ce fichier à la RACINE du projet
+# ============================================================
+
+# ── Activer le moteur de réécriture ─────────────────────────
+Options -Indexes
+RewriteEngine On
+
+# ── Redirection HTTP → HTTPS ─────────────────────────────────
+# Décommentez si votre certificat SSL fonctionne
+# RewriteCond %{HTTPS} off
+# RewriteCond %{HTTP_HOST} ^(.+)$ [NC]
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# ── Proxy / Load Balancer HTTPS (si derrière Nginx/CloudFlare) ──
+RewriteCond %{HTTP:X-Forwarded-Proto} =http [NC]
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ── En-têtes de sécurité ─────────────────────────────────────
+<IfModule mod_headers.c>
+    # HTTPS strict (activer après que SSL fonctionne)
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" "expr=%{HTTPS} == 'on'"
+
+    # Permissions navigateur — CRITIQUE pour caméra/micro
+    Header always set Permissions-Policy "camera=*, microphone=*, display-capture=(self)"
+
+    # Sécurité XSS
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # CORS pour les API (appels AJAX)
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, X-Requested-With"
+</IfModule>
+
+# ── Types MIME (audio/vidéo pour lecteur vocal) ──────────────
+<IfModule mod_mime.c>
+    AddType audio/webm  .webm
+    AddType audio/ogg   .ogg
+    AddType audio/mp4   .mp4 .m4a
+    AddType audio/mpeg  .mp3
+    AddType video/mp4   .mp4
+    AddType video/webm  .webm
+    AddType image/svg+xml .svg
+    AddType application/json .json
+</IfModule>
+
+# ── Cache pour les fichiers statiques ────────────────────────
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg  "access plus 7 days"
+    ExpiresByType image/png   "access plus 7 days"
+    ExpiresByType image/svg+xml "access plus 7 days"
+    ExpiresByType text/css    "access plus 1 day"
+    ExpiresByType text/javascript "access plus 1 day"
+    ExpiresByType audio/webm  "access plus 30 days"
+</IfModule>
+
+# ── Compression gzip ─────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/json
+</IfModule>
+
+# ── Protéger les fichiers sensibles ──────────────────────────
+<FilesMatch "^(config\.php|debug.*\.php|\.env|composer\.json)$">
+    Require all denied
+</FilesMatch>
+
+# ── PHP : augmenter limites si nécessaire ────────────────────
+<IfModule mod_php.c>
+    php_value upload_max_filesize 50M
+    php_value post_max_size 50M
+    php_value max_execution_time 60
+    php_value memory_limit 128M
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 50M
+    php_value post_max_size 50M
+    php_value max_execution_time 60
+    php_value memory_limit 128M
+</IfModule>

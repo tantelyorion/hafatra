@@ -1,0 +1,19 @@
+# HAFATRA - uploads/audio/.htaccess
+# Assurer que les fichiers audio sont servis avec le bon type MIME
+
+AddType audio/webm .webm
+AddType audio/ogg  .ogg
+AddType audio/mp4  .mp4 .m4a
+AddType audio/mpeg .mp3
+
+# Permettre l'accès aux fichiers audio
+<FilesMatch "\.(webm|ogg|mp3|mp4|m4a)$">
+    Require all granted
+    Header set Accept-Ranges bytes
+    Header set Cache-Control "public, max-age=3600"
+</FilesMatch>
+
+# Permettre les requêtes Range (nécessaire pour seek audio)
+RewriteEngine On
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
